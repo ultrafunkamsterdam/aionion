@@ -114,7 +114,7 @@ class ClientSession(_ClientSession):
         tor: Tor,
         base_url: Optional[StrOrURL] = None,
         *,
-        shuffle: bool = None 
+        shuffle: bool = None ,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         cookies: Optional[LooseCookies] = None,
         headers: Optional[LooseHeaders] = None,
