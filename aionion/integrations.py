@@ -81,12 +81,11 @@ class ProxyConnectTor(_ProxyConnector):
         self._shuffle = shuffle
 
     def next_proxy(self):
+        p = next(self.proxy_cycle)
         if self._shuffle:
             i = random.randint(0, len(self._proxies))
             for _ in range(i):
                 p = next(self.proxy_cycle)
-        else:
-            p = next(self.proxy_cycle)
         self._proxy_host, self._proxy_port = p
         self._proxy = p
 
