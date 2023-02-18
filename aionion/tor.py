@@ -306,8 +306,15 @@ class Tor(object):
             else:
                 port = utils.free_port(self._start_port)
 
+            socks_port = []
+            for n in range(0, self._num_socks):
+                p = utils.free_port(self._start_port + n)
+                while p in socks_port:
+                    p = utils.free_port(p + 1)
+                socks_port.append(p)
+            
             torrc = TorRC(
-                socks_ports=[utils.free_port(port + n) for n in range(0, self._num_socks)],
+                socks_ports=socks_port,
                 data_directory=data_directory,
             )
 
