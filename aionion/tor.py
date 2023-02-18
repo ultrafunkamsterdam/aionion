@@ -304,10 +304,10 @@ class Tor(object):
                 port = utils.free_port(highest_in_use) + 100
 
             else:
-                port = utils.free_port(DEFAULT_PORT)
+                port = utils.free_port(self._start_port)
 
             torrc = TorRC(
-                socks_ports=[port + n for n in range(0, self._num_socks)],
+                socks_ports=[utils.free_port(port + n) for n in range(0, self._num_socks)],
                 data_directory=data_directory,
             )
 
