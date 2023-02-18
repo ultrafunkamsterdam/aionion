@@ -1,25 +1,22 @@
 import asyncio
 import itertools
+from itertools import cycle
 import json
 import logging
-
 from ssl import SSLContext
-from itertools import cycle
-
 from types import SimpleNamespace
-
 from typing import Any
 from typing import Callable
 from typing import IO
+from typing import Iterable
 from typing import List
+from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
 from typing import Text
 from typing import Tuple
 from typing import Type
 from typing import Union
-from typing import Iterable
-from typing import Mapping
 
 from aiohttp import BasicAuth
 from aiohttp import ClientRequest as ClientRequest
@@ -39,7 +36,6 @@ from aiohttp.typedefs import LooseHeaders
 from aiohttp.typedefs import StrOrURL
 from aiohttp_socks.connector import ProxyConnector as _ProxyConnector
 from aiohttp_socks.connector import ProxyType as _ProxyType
-
 import requests.auth
 
 from aionion.tor import Tor

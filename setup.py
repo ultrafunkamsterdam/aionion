@@ -26,10 +26,10 @@ setup(
     packages=["aionion"],
     include_package_data=True,
     install_requires=[
-        "aiohttp",
-        "aiohttp_socks",
-        "stem",
+        "aiohttp>=3.8.0",
+        "aiohttp_socks>=0.7.0",
+        "stem>=1.8.0",
         "requests>=2.26",
-        "async_timeout",
+        "async_timeout>=4.0.1",
     ],
 )

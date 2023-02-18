@@ -37,7 +37,6 @@ logger = logging.getLogger(__name__)
 from . import utils
 from .tor import *
 from . import integrations
-from .integrations import ClientSession, ClientResponse, ClientRequest, RequestsSession
 
 
 def get_running_instance():

@@ -3,16 +3,15 @@ from __future__ import annotations
 import asyncio
 import asyncio.subprocess
 from concurrent.futures import ThreadPoolExecutor
+import datetime
 from enum import Enum
 import logging
 import os
 from pathlib import Path
 import re
 import socket
-import datetime
 import ssl
 import time
-import shutil
 from typing import Optional
 
 import aiohttp_socks.utils
@@ -286,7 +285,6 @@ class Tor(object):
             i = 0
             data_directory = utils.TOR_DATA_FOLDER
             while _data_dir_locked(data_directory):
-
                 new_data_directory = data_directory.with_name(str(i))
                 log.warning(
                     f"{data_directory} is locked. trying another ({new_data_directory})"
