@@ -114,6 +114,7 @@ class ClientSession(_ClientSession):
         tor: Tor,
         base_url: Optional[StrOrURL] = None,
         *,
+        shuffle: bool = None 
         loop: Optional[asyncio.AbstractEventLoop] = None,
         cookies: Optional[LooseCookies] = None,
         headers: Optional[LooseHeaders] = None,
@@ -138,7 +139,7 @@ class ClientSession(_ClientSession):
     ) -> None:
         # the missing parameter (connector) is being created here based on the provided Tor instance,  so it uses the correct proxies
         self.tor = tor
-        connector = ProxyConnectTor(tor)
+        connector = ProxyConnectTor(tor, shuffle)
 
         super().__init__(
             base_url,
