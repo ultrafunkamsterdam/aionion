@@ -61,9 +61,10 @@ class ProxyConnectTor(_ProxyConnector):
     def __init__(
         self, tor: Tor, rdns=None, force_close=True, use_dns_cache=False, shuffle=True, **kwargs
     ):
+        self._proxies = tor.proxies 
         # create the generator from current proxies
-        self.proxy_cycle = cycle(tor.proxies)
-
+        self.proxy_cycle = cycle(self._proxies)
+        
         # this is bogus to initialize the parent
         super().__init__(
             _ProxyType.SOCKS5,
@@ -81,7 +82,7 @@ class ProxyConnectTor(_ProxyConnector):
 
     def next_proxy(self):
         if self._shuffle:
-            i = random.randint(0, len(tor._proxies))
+            i = random.randint(0, len(self._proxies))
             for _ in range(i):
                 p = next(self.proxy_cycle)
         else:
