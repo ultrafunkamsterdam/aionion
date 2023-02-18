@@ -260,7 +260,7 @@ class Tor(object):
         self._controller = None
         self._tasks = set()
         self._num_socks = num_socks
-        self._start_port = start_port
+        self._start_port = utils.free_port(start_port)
 
     @property
     def process(self) -> asyncio.subprocess.Process:
