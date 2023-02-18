@@ -318,7 +318,7 @@ async def fetch_fastest(url, tor_instance, retry_bad_status=3):
      import random
      async with ClientSession(tor_instance) as s:
         while True:
-            tasks = [ s.get(url) for _ in range(len(tor.proxies)) ]
+            tasks = [ s.get(url) for _ in range(len(tor_instance.proxies)) ]
             
             random.shuffle(tasks)
             
