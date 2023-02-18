@@ -544,7 +544,7 @@ class TorRC(dict):
         self.socks_port = socks_ports
         self.control_port = control_port or utils.free_port(first_port + 1)
         self.dns_port = dns_port or utils.free_port(first_port + 2)
-        self.http_tunnel_port = http_tunnel_port or free_port(first_port + 3)
+        self.http_tunnel_port = http_tunnel_port or utils.free_port(first_port + 3)
 
         self.data_directory = data_directory
         self.new_circuit_period = new_circuit_period
