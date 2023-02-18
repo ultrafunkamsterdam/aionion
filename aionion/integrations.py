@@ -51,6 +51,7 @@ def __getattr__(name):
     if name not in __all__:
         raise AttributeError(name)
 
+import random
 
 class ProxyConnectTor(_ProxyConnector):
     @property
@@ -58,7 +59,7 @@ class ProxyConnectTor(_ProxyConnector):
         return self._proxy
 
     def __init__(
-        self, tor: Tor, rdns=None, force_close=True, use_dns_cache=False, **kwargs
+        self, tor: Tor, rdns=None, force_close=True, use_dns_cache=False, shuffle=True, **kwargs
     ):
         # create the generator from current proxies
         self.proxy_cycle = cycle(tor.proxies)
@@ -76,9 +77,15 @@ class ProxyConnectTor(_ProxyConnector):
             **kwargs
         )
         self._proxy = None
+        self._shuffle = shuffle
 
     def next_proxy(self):
-        p = next(self.proxy_cycle)
+        if self._shuffle:
+            i = random.randint(0, len(tor._proxies))
+            for _ in range(i):
+                p = next(self.proxy_cycle)
+        else:
+            p = next(self.proxy_cycle)
         self._proxy_host, self._proxy_port = p
         self._proxy = p
 

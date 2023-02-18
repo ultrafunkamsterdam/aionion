@@ -298,6 +298,34 @@ import asyncio
 from itertools import islice
 
 
+async def fetch_fastest(url, tor_instance, retry_bad_status=3):
+     import random
+     async with aionion.integrations.ClientSession(tor_instance) as s:
+        while True:
+            tasks = [ s.get(url) for _ in range(len(tor.proxies)) ]
+            
+            random.shuffle(tasks)
+            
+            tasks = [asyncio.create_task(t) for t in tasks]
+            done , pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            [ x.cancel() for x in pending ]
+            await asyncio.sleep(.001)
+            task = done.pop()
+            result = task.result()
+            if result.status in range(400, 500):
+                if not retry_bad_status:
+                    print('no more retries')
+                    return result
+                print('status ', result.status, 'retrying')
+                retry_bad_status -= 1
+                await asyncio.sleep(.001)
+                continue
+            return result
+
+
+
+
+
 def limited_as_completed(coros, limit):
     """
     Run the coroutines (or futures) supplied in the
