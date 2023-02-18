@@ -27,7 +27,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "bs4",
-        "lxml"
+        "lxml",
         "aiohttp>=3.8.0",
         "aiohttp_socks>=0.7.0",
         "stem>=1.8.0",
