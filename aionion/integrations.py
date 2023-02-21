@@ -313,29 +313,66 @@ class RequestsSession(requests.Session):
 
 
 
+from aiohttp import InvalidURL, ClientSSLError, ServerConnectionError, ClientConnectorSSLError
+
 import asyncio
-async def fetch_fastest(url, tor_instance, retry_bad_status=3):
-     import random
-     async with ClientSession(tor_instance) as s:
+
+
+async def fetch_fastest( url , tor_instance , with_body = False , retry_bad_status = 3 ):
+    import random
+    
+    async with ClientSession( tor_instance ) as s:
         while True:
-            tasks = [ s.get(url) for _ in range(len(tor_instance.proxies)) ]
-            
-            random.shuffle(tasks)
-            
-            tasks = [asyncio.create_task(t) for t in tasks]
-            done , pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            [ x.cancel() for x in pending ]
-            await asyncio.sleep(.001)
-            task = done.pop()
-            result = task.result()
-            if result.status in range(400, 500):
-                if not retry_bad_status:
-                    print('no more retries')
-                    return result
-                print('status ', result.status, 'retrying')
-                retry_bad_status -= 1
-                await asyncio.sleep(.001)
-                continue
-            return result
-
-
+            try:
+                tasks = [ s.get( url ) for _ in range( len( tor_instance.proxies ) ) ]
+                
+                random.shuffle( tasks )
+                
+                tasks = [ asyncio.create_task( t ) for t in tasks ]
+                done , pending = await asyncio.wait( tasks , return_when = asyncio.FIRST_COMPLETED )
+                [ x.cancel() for x in pending ]
+                await asyncio.sleep( .001 )
+                task = done.pop()
+                result = task.result()
+                if result.status in range( 400 , 500 ):
+                    if not retry_bad_status:
+                        log.warn( 'no more retries for %s' % url )
+                        if with_body:
+                            result.body = await result.read()
+                        return result
+                    log.warn( 'status %s - retrying %s' % (result.status , url) )
+                    retry_bad_status -= 1
+                    await asyncio.sleep( .001 )
+                    continue
+                if with_body:
+                    result.body = await result.read()
+                return result
+            except (InvalidURL, ClientSSLError, ServerConnectionError, ClientConnectorSSLError):
+                return
+#
+#
+# async def fetch_fastest(url, tor_instance, retry_bad_status=3):
+#      import random
+#      async with ClientSession(tor_instance) as s:
+#         while True:
+#             tasks = [ s.get(url) for _ in range(len(tor_instance.proxies)) ]
+#
+#             random.shuffle(tasks)
+#
+#             tasks = [asyncio.create_task(t) for t in tasks]
+#             done , pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+#             [ x.cancel() for x in pending ]
+#             await asyncio.sleep(.001)
+#             task = done.pop()
+#             result = task.result()
+#             if result.status in range(400, 500):
+#                 if not retry_bad_status:
+#                     print('no more retries')
+#                     return result
+#                 print('status ', result.status, 'retrying')
+#                 retry_bad_status -= 1
+#                 await asyncio.sleep(.001)
+#                 continue
+#             return result
+#
+#
