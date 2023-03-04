@@ -180,15 +180,12 @@ def run_in_background_thread(tor):
             super().__init__(target=self.start_loop)
             self.loop = asyncio.new_event_loop()
             self.start_ev = threading.Event()
-            # self.proxies = []
             self.tor = tor
 
         def start_loop(self):
-            global _proxies
             asyncio.set_event_loop(self.loop)
             self.loop.run_until_complete(self.tor.start())
             self.start_ev.set()
-            # self.proxies.extend(self.tor.proxies)
             self.loop.run_until_complete(self.keep_running())
 
         async def keep_running(self):

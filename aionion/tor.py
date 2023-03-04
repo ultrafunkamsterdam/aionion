@@ -482,12 +482,11 @@ class Tor(object):
 def _data_dir_locked(datadir: Path):
     try:
         b = datadir / "control_auth_cookie"
-        if b.exists():
-            return True
-        else:
-            #        if not b:
-            #            shutil.rmtree(datadir)
-            return False
+        b2 = datadir / "lock"
+        b.unlink(missing_ok=True)
+        b2.unlink(missing_ok=True)
+    except OSError:
+        return True
     except PermissionError:
         return True
     except FileNotFoundError:
