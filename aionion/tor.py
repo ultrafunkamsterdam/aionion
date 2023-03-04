@@ -313,8 +313,7 @@ class Tor(object):
 
         torrc.set_notify_on_change(self._on_config_change)
         self.config = torrc
-        if self not in INSTANCES:
-            INSTANCES.append(self)
+
         coro = asyncio.subprocess.create_subprocess_exec(
             self.binary_path,
             "__OwningControllerProcess",
@@ -352,12 +351,8 @@ class Tor(object):
                     break
             except TypeError:
                 pass
-
-        # if self._num_socks > 1:
-        #     current_ports = self.config.socks_port
-        #     self.config.socks_port = current_ports
-        #
-        # self._num_socks = -1
+        if self not in INSTANCES:
+            INSTANCES.append(self)
         return self
 
     @property

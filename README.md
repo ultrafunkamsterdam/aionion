@@ -67,8 +67,28 @@ logging.basicConfig(level=10)
 asyncio.run(main())
 ```
 
-
-Lets run this again
+Rather start it in the background for more resiliancy?
+----
 ```python
+import logging
+import asyncio
+import aionion
+
+async def main():
+    async with aionion.ClientSession(tor) as session:
+        for _ in range(10):
+            async with session.get('http://httpbin.org/ip') as response:
+                print ( await response.json() )
+
+    requests_session = aionion.RequestsSession(tor)
+    print(requests_session.get('https://httpbin.org/ip'))
+    print(requests_session.get('https://httpbin.org/ip'))
+    print(requests_session.get('https://httpbin.org/ip'))
+    print(requests_session.get('https://httpbin.org/ip'))
+    
+logging.basicConfig(level=10)
+tor = aionion.create_in_background_sync()
+import time
+time.sleep(1)
 asyncio.run(main())
 ```

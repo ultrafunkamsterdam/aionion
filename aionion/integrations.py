@@ -42,6 +42,7 @@ from aiohttp_socks.connector import ProxyType as _ProxyType
 
 import requests.auth
 
+import aionion
 from aionion.tor import Tor
 
 
@@ -107,7 +108,7 @@ class ClientSession(_ClientSession):
 
     def __init__(
         self,
-        tor: Tor,
+        tor: Tor = None,
         base_url: Optional[StrOrURL] = None,
         *,
         loop: Optional[asyncio.AbstractEventLoop] = None,
@@ -132,6 +133,12 @@ class ClientSession(_ClientSession):
         trace_configs: Optional[List[TraceConfig]] = None,
         read_bufsize: int = 2**16
     ) -> None:
+        if not tor:
+            instances = aionion.get_running_instance()
+            if not len(instances):
+                tor = aionion.create_in_background_sync()
+            else:
+                tor = instances[-1]  # take last launched instance
         # the missing parameter (connector) is being created here based on the provided Tor instance,  so it uses the correct proxies
         self.tor = tor
         connector = ProxyConnectTor(tor)
@@ -244,7 +251,13 @@ class RequestsSession(requests.Session):
     Drop-in replacement for ```requests.Session``` for use with Aionion
     """
 
-    def __init__(self, tor: Tor) -> None:
+    def __init__(self, tor: Tor = None) -> None:
+        if not tor:
+            instances = aionion.get_running_instance()
+            if not len(instances):
+                tor = aionion.create_in_background_sync()
+            else:
+                tor = instances[-1]  # take last launched instance
         self.proxy_cycle = itertools.cycle(tor.proxies)
         super().__init__()
 
