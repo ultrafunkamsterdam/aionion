@@ -3,15 +3,16 @@ from __future__ import annotations
 import asyncio
 import asyncio.subprocess
 from concurrent.futures import ThreadPoolExecutor
-import datetime
 from enum import Enum
 import logging
 import os
 from pathlib import Path
 import re
 import socket
+import datetime
 import ssl
 import time
+import shutil
 from typing import Optional
 
 import aiohttp_socks.utils
@@ -21,7 +22,6 @@ from stem.control import Controller as _Controller
 
 from . import utils
 from .utils import PublicIPService
-
 
 __all__ = ["SocksProxy", "Tor", "TorRC"]
 
@@ -185,7 +185,7 @@ class SocksProxy:
         elif re.search(r"([^0-9]{2,3})+", host):
             # server_hostname = host
             # as we already filtered ip addresses. this is probably a dns name
-            host_packed = struct.pack(f"!B{len( host )}s", len(host), host.encode())
+            host_packed = struct.pack(f"!B{len(host)}s", len(host), host.encode())
             # or just the hostname
             typ = 0x03
 
@@ -260,7 +260,7 @@ class Tor(object):
         self._controller = None
         self._tasks = set()
         self._num_socks = num_socks
-        self._start_port = utils.free_port(start_port)
+        self._start_port = start_port
 
     @property
     def process(self) -> asyncio.subprocess.Process:
@@ -304,17 +304,10 @@ class Tor(object):
                 port = utils.free_port(highest_in_use) + 100
 
             else:
-                port = utils.free_port(self._start_port)
+                port = utils.free_port(DEFAULT_PORT)
 
-            socks_port = []
-            for n in range(0, self._num_socks):
-                p = utils.free_port(self._start_port + n)
-                while p in socks_port:
-                    p = utils.free_port(p + 1)
-                socks_port.append(p)
-            
             torrc = TorRC(
-                socks_ports=socks_port,
+                socks_ports=[port + n for n in range(0, self._num_socks)],
                 data_directory=data_directory,
             )
 
@@ -360,23 +353,10 @@ class Tor(object):
             except TypeError:
                 pass
 
-        if self._num_socks > 1:
-            current_ports = self.config.socks_port
-
-            try:
-                # for _ in range( self._num_socks ):
-                #     last_port = current_ports[ -1 ]
-                #     while last_port in [self.config.control_port, self.config.dns_port, self.config.http_tunnel_port,
-                #                         *self.config.socks_port]:
-                #         last_port += 2
-                #     current_ports.append( last_port )
-
-                self.config.socks_port = current_ports
-            except:
-                import traceback
-
-                traceback.print_exc()
-
+        # if self._num_socks > 1:
+        #     current_ports = self.config.socks_port
+        #     self.config.socks_port = current_ports
+        #
         # self._num_socks = -1
         return self
 
@@ -495,7 +475,7 @@ class Tor(object):
     def __repr__(self):
         nports = ""
         if self.config and self.config.control_port:
-            nports = f"socksports: {len( self.config.socks_port )}"
+            nports = f"socksports: {len(self.config.socks_port)}"
         return f"<{self.__class__.__name__} < running {self.running}, {nports} >"
 
 
@@ -542,9 +522,9 @@ class TorRC(dict):
             socks_ports = [first_port]
 
         self.socks_port = socks_ports
-        self.control_port = control_port or utils.free_port(first_port + 1)
-        self.dns_port = dns_port or utils.free_port(first_port + 2)
-        self.http_tunnel_port = http_tunnel_port or utils.free_port(first_port + 3)
+        self.control_port = control_port or first_port + 1
+        self.dns_port = dns_port or first_port + 2
+        self.http_tunnel_port = http_tunnel_port or first_port + 3
 
         self.data_directory = data_directory
         self.new_circuit_period = new_circuit_period
@@ -585,7 +565,7 @@ class TorRC(dict):
                 for val in value:
                     cmdline.extend([f"--{key}", f"{val}"])
             else:
-                cmdline.extend([f"--{key}", f"{str( value )}"])
+                cmdline.extend([f"--{key}", f"{str(value)}"])
         return cmdline
 
     def as_string(self):
@@ -610,7 +590,7 @@ class TorRC(dict):
                 for val in value:
                     config_str += f"{key} {val}\n"
             else:
-                config_str += f"{key} {str( value )}\n"
+                config_str += f"{key} {str(value)}\n"
         return config_str
 
     def as_bytes(self):

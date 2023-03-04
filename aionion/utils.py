@@ -17,7 +17,7 @@ import urllib.parse
 
 import async_timeout
 import bs4
-
+import time
 
 try:
     # python >= 3.9
@@ -179,11 +179,16 @@ def run_in_background_thread(tor):
         def __init__(self, tor: "Tor"):
             super().__init__(target=self.start_loop)
             self.loop = asyncio.new_event_loop()
+            self.start_ev = threading.Event()
+            # self.proxies = []
             self.tor = tor
 
         def start_loop(self):
+            global _proxies
             asyncio.set_event_loop(self.loop)
             self.loop.run_until_complete(self.tor.start())
+            self.start_ev.set()
+            # self.proxies.extend(self.tor.proxies)
             self.loop.run_until_complete(self.keep_running())
 
         async def keep_running(self):
@@ -196,6 +201,9 @@ def run_in_background_thread(tor):
     bgt = BackgroundThread(tor)
     bgt.daemon = True
     bgt.start()
+
+    while not bgt.start_ev.is_set():
+        time.sleep(0.1)
     return bgt
 
 
@@ -296,7 +304,6 @@ class PublicIPService:
 
 import asyncio
 from itertools import islice
-
 
 
 def limited_as_completed(coros, limit):

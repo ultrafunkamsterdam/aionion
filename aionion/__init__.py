@@ -1,42 +1,9 @@
-# def ClientSession(*args, **kwargs):
-#     from . import integrations
-#     import functools
-#
-#     @functools.wraps()
-#     def wrapper(*args, **kwargs):
-#         return integrations.ClientSession(*args, **kwargs)
-
-#
-# __all__ = [
-#     "Tor",
-#     "get_running_instance",
-#     "set_loglevel",
-#     "set_default_port",
-#     "set_default_limit",
-#     "create_in_background_sync",
-#     "create_async",
-#     "ClientSession",
-#     "RequestsSession",
-#     "ClientResponse",
-#     "ClientRequest",
-#     "logger",
-#     "utils",
-# ]
-#
-#
-# def __getattr__(name):
-#     if name not in __all__:
-#         raise AttributeError(name)
-
-
 import logging
-
-
-logger = logging.getLogger(__name__)
-
 from . import utils
 from .tor import *
-from . import integrations
+from .integrations import ClientSession, ClientResponse, ClientRequest, RequestsSession
+
+logger = logging.getLogger(__name__)
 
 
 def get_running_instance():
@@ -78,7 +45,9 @@ def create_in_background_sync(nproxies=10) -> "Tor":
     from . import tor
 
     t = tor.Tor(nproxies)
-    utils.run_in_background_thread(t)
+    bgt = utils.run_in_background_thread(t)
+    # ugly workaround
+    logger.debug(str(t.proxies))  # =property -> makes sure proxies are intitialized
     return t
 
 

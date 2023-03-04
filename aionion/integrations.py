@@ -1,23 +1,25 @@
-import sys
 import asyncio
 import itertools
-from itertools import cycle
 import json
 import logging
+
 from ssl import SSLContext
+from itertools import cycle
+
 from types import SimpleNamespace
+
 from typing import Any
 from typing import Callable
 from typing import IO
-from typing import Iterable
 from typing import List
-from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
 from typing import Text
 from typing import Tuple
 from typing import Type
 from typing import Union
+from typing import Iterable
+from typing import Mapping
 
 from aiohttp import BasicAuth
 from aiohttp import ClientRequest as ClientRequest
@@ -37,6 +39,7 @@ from aiohttp.typedefs import LooseHeaders
 from aiohttp.typedefs import StrOrURL
 from aiohttp_socks.connector import ProxyConnector as _ProxyConnector
 from aiohttp_socks.connector import ProxyType as _ProxyType
+
 import requests.auth
 
 from aionion.tor import Tor
@@ -51,7 +54,6 @@ def __getattr__(name):
     if name not in __all__:
         raise AttributeError(name)
 
-import random
 
 class ProxyConnectTor(_ProxyConnector):
     @property
@@ -59,12 +61,11 @@ class ProxyConnectTor(_ProxyConnector):
         return self._proxy
 
     def __init__(
-        self, tor: Tor, rdns=None, force_close=True, use_dns_cache=False, shuffle=True, **kwargs
+        self, tor: Tor, rdns=None, force_close=True, use_dns_cache=False, **kwargs
     ):
-        self._proxies = tor.proxies 
         # create the generator from current proxies
-        self.proxy_cycle = cycle(self._proxies)
-        
+        self.proxy_cycle = cycle(tor.proxies)
+
         # this is bogus to initialize the parent
         super().__init__(
             _ProxyType.SOCKS5,
@@ -78,14 +79,9 @@ class ProxyConnectTor(_ProxyConnector):
             **kwargs
         )
         self._proxy = None
-        self._shuffle = shuffle
 
     def next_proxy(self):
         p = next(self.proxy_cycle)
-        if self._shuffle:
-            i = random.randint(0, len(self._proxies))
-            for _ in range(i):
-                p = next(self.proxy_cycle)
         self._proxy_host, self._proxy_port = p
         self._proxy = p
 
@@ -114,7 +110,6 @@ class ClientSession(_ClientSession):
         tor: Tor,
         base_url: Optional[StrOrURL] = None,
         *,
-        shuffle: bool = None ,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         cookies: Optional[LooseCookies] = None,
         headers: Optional[LooseHeaders] = None,
@@ -139,7 +134,7 @@ class ClientSession(_ClientSession):
     ) -> None:
         # the missing parameter (connector) is being created here based on the provided Tor instance,  so it uses the correct proxies
         self.tor = tor
-        connector = ProxyConnectTor(tor, shuffle)
+        connector = ProxyConnectTor(tor)
 
         super().__init__(
             base_url,
@@ -310,69 +305,3 @@ class RequestsSession(requests.Session):
                 exc_info=True,
             )
         return response
-
-
-
-from aiohttp import InvalidURL, ClientSSLError, ServerConnectionError, ClientConnectorSSLError
-
-import asyncio
-
-
-async def fetch_fastest( url , tor_instance , with_body = False , retry_bad_status = 3 ):
-    import random
-    
-    async with ClientSession( tor_instance ) as s:
-        while True:
-            try:
-                tasks = [ s.get( url ) for _ in range( len( tor_instance.proxies ) ) ]
-                
-                random.shuffle( tasks )
-                
-                tasks = [ asyncio.create_task( t ) for t in tasks ]
-                done , pending = await asyncio.wait( tasks , return_when = asyncio.FIRST_COMPLETED )
-                [ x.cancel() for x in pending ]
-                await asyncio.sleep( .001 )
-                task = done.pop()
-                result = task.result()
-                if result.status in range( 400 , 500 ):
-                    if not retry_bad_status:
-                        log.warn( 'no more retries for %s' % url )
-                        if with_body:
-                            result.body = await result.read()
-                        return result
-                    log.warn( 'status %s - retrying %s' % (result.status , url) )
-                    retry_bad_status -= 1
-                    await asyncio.sleep( .001 )
-                    continue
-                if with_body:
-                    result.body = await result.read()
-                return result
-            except (InvalidURL, ClientSSLError, ServerConnectionError, ClientConnectorSSLError):
-                return
-#
-#
-# async def fetch_fastest(url, tor_instance, retry_bad_status=3):
-#      import random
-#      async with ClientSession(tor_instance) as s:
-#         while True:
-#             tasks = [ s.get(url) for _ in range(len(tor_instance.proxies)) ]
-#
-#             random.shuffle(tasks)
-#
-#             tasks = [asyncio.create_task(t) for t in tasks]
-#             done , pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-#             [ x.cancel() for x in pending ]
-#             await asyncio.sleep(.001)
-#             task = done.pop()
-#             result = task.result()
-#             if result.status in range(400, 500):
-#                 if not retry_bad_status:
-#                     print('no more retries')
-#                     return result
-#                 print('status ', result.status, 'retrying')
-#                 retry_bad_status -= 1
-#                 await asyncio.sleep(.001)
-#                 continue
-#             return result
-#
-#
